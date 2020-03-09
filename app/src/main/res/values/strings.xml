@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">MeAndroidCodeChallenge</string>
+
+    <!-- Action bar custom texts -->
+    <string name="emp_list">Employee List</string>
+    <string name="emp_details">Employee Details</string>
+
+    <!-- Employee Details Activity -->
+    <string name="emp_name">Employee Name:</string>
+    <string name="emp_age">Age:</string>
+    <string name="profile_image">Profile Image</string>
+</resources>
