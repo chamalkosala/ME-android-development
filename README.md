@@ -13,11 +13,11 @@ API integration using Retrofit, RxJava and RxAndroid
 
 Employee List
 
-![](app/src/main/res/images/employee_list.png)
+![](images/employee_list.png)
 
 Employee Detail View
 
-![](app/src/main/res/images/employee_detail_view.png)
+![](images/employee_detail_view.png)
 
 # API Responses
 
