@@ -1,17 +1,17 @@
 # ME Android Code Challenge
 
 
-# Employeed List and Detail View Application
+# Employee List and Detail View Application
 
 Implemented using Kotlin and Android Studio
 
-Implemented Employee List using RecyclerView in Android
+RecyclerView is used for implement employee list
 
 API integration using Retrofit, RxJava and RxAndroid
 
 # Application Screens
 
-Employeed List
+Employee List
 
 ![](app/src/main/res/images/employee_list.png)
 
