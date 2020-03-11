@@ -1,14 +1,12 @@
 package com.example.meandroidcodechallenge.ui.adapters
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.meandroidcodechallenge.Common.constants.ApplicationConstants
-import com.example.meandroidcodechallenge.R
 import com.example.meandroidcodechallenge.model.EmployeeData
-import com.squareup.picasso.Callback
-import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.employee_list_item_view.view.*
 
 class EmployeeListRecyclerAdapter(
@@ -32,6 +30,7 @@ class EmployeeListRecyclerAdapter(
     }
 
     class EmployeeViewHolder(val containerView: View) : RecyclerView.ViewHolder(containerView) {
+
         val imgProgress = containerView.imageProgress
         val empImage = containerView.ivEmpImage;
         val empName = containerView.tvEmpName;
@@ -39,21 +38,31 @@ class EmployeeListRecyclerAdapter(
         val empBirthDay = containerView.tvEmpBirthDate;
 
         fun bind(employee: EmployeeData, clickListener: OnItemClickListener) {
-            Picasso.get()
-                .load(ApplicationConstants.EMP_PROF_IMAGE)
-                .into(empImage, object : Callback {
-                    override fun onSuccess() {
-                        imgProgress.setVisibility(View.GONE)
-                    }
+            var base64String: String = "";
+            if (employee.thumbImage != null) {
+                base64String = employee.thumbImage
+            } else if (employee.image != null)
+                base64String = employee.image
 
-                    override fun onError(e: Exception?) {
-                        imgProgress.setVisibility(View.GONE)
-                        empImage.setImageResource(R.drawable.ic_default_user)
-                    }
-                })
-            empName?.text = employee.employee_name
-            empGender?.text = employee.employee_age
-            empBirthDay?.text = employee.employee_salary
+            if (base64String.isNotEmpty()) {
+                val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                empImage?.setImageBitmap(decodedImage)
+            }
+
+            var employeeName: String = "";
+            if (employee.first_name != null) {
+                employeeName = employee.first_name
+            }
+            if (employee.last_name != null) {
+                employeeName =
+                    if (employeeName.isNotEmpty()) employeeName + " " + employee.last_name
+                    else employee.last_name
+            }
+
+            empName?.text = employeeName
+            empGender?.text = employee.gender
+            empBirthDay?.text = employee.birth_date
 
             itemView.setOnClickListener {
                 clickListener.onItemClicked(employee)

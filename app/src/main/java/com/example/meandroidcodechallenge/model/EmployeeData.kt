@@ -1,9 +1,11 @@
 package com.example.meandroidcodechallenge.model
 
 class EmployeeData(
-    val id: String? = null,
-    val employee_name: String? = null,
-    val employee_salary: String? = null,
-    val employee_age: String? = null,
-    val profile_image: String? = null
+    val id: Int? = null,
+    val first_name: String? = null,
+    val last_name: String? = null,
+    val gender: String? = null,
+    val birth_date: String? = null,
+    val image: String? = null,
+    val thumbImage: String? = null
 )

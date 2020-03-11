@@ -1,82 +1,126 @@
 package com.example.meandroidcodechallenge.ui.activities
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.ProgressBar
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.meandroidcodechallenge.Common.Common
 import com.example.meandroidcodechallenge.Common.constants.ApplicationConstants
 import com.example.meandroidcodechallenge.R
-import com.example.meandroidcodechallenge.model.Employee
 import com.example.meandroidcodechallenge.model.EmployeeData
 import com.example.meandroidcodechallenge.model.EmployeeDetails
-import com.example.meandroidcodechallenge.rest.APIService
 import com.example.meandroidcodechallenge.rest.RestClient
 import com.example.meandroidcodechallenge.ui.adapters.EmployeeListRecyclerAdapter
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.util.*
 
-
-class MainActivity : BaseActivity(), EmployeeListRecyclerAdapter.OnItemClickListener {
-    private var listProgress: ProgressBar? = null
-    private var mApiService: APIService? = null
+class MainActivity : AppCompatActivity(), EmployeeListRecyclerAdapter.OnItemClickListener {
+    private var disposable: Disposable? = null
     private var mAdapter: EmployeeListRecyclerAdapter?= null
     private var mEmployees: MutableList<EmployeeData> = ArrayList()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    private val client by lazy {
+        RestClient.create()
+    }
 
-        mApiService = RestClient.client.create(APIService::class.java)
-        listProgress = progressBar
-        employeeListRecyclerView!!.layoutManager = LinearLayoutManager(this)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        try {
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_main)
+
+            setupRecycler()
+            fetchEmployeeDataList()
+
+            swipeRefreshLayout!!.setOnRefreshListener {
+                mEmployees.clear()
+                mAdapter!!.notifyDataSetChanged()
+                fetchEmployeeDataList()
+            }
+
+            //** Set the colors of the Pull To Refresh View
+            swipeRefreshLayout!!.setProgressBackgroundColorSchemeColor( ContextCompat.getColor(this, R.color.colorPrimary))
+            swipeRefreshLayout!!.setColorSchemeColors(Color.WHITE)
+
+            Log.d(TAG, "onCreate")
+        } catch (e: Exception) {
+            Log.e(TAG, "onCreate: $e")
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        disposable?.dispose()
+    }
+
+    override fun onDestroy() {
+        Common.hideLoading()
+        super.onDestroy()
+    }
+
+    private fun setupRecycler() {
+        employeeListRecyclerView!!.setHasFixedSize(true)
+        val layoutManager = LinearLayoutManager(this)
+        layoutManager.orientation = LinearLayoutManager.VERTICAL
+        employeeListRecyclerView!!.layoutManager = layoutManager
+
         mAdapter = EmployeeListRecyclerAdapter(this, mEmployees, R.layout.row_empployee_list_item_view)
         employeeListRecyclerView!!.adapter = mAdapter
-
-        fetchEmployeeDataList()
     }
 
     private fun fetchEmployeeDataList() {
         if (Common.isNetworkConnected(this)) {
-            performGetEmployeeList()
+            Common.showLoading(this)
+            disposable = client.fetchEmployeeData()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { result ->
+                        Common.hideLoading()
+                        swipeRefreshLayout!!.isRefreshing = false
+                        mEmployees.addAll(result!!)
+                        mAdapter!!.notifyDataSetChanged()
+                        if(result.isNotEmpty()){
+                            toggleView(false)
+                        }
+                    },
+                    { error ->
+                        Common.hideLoading()
+                        swipeRefreshLayout!!.isRefreshing = false
+                        Common.showLongToast(this, error.message.toString())
+                        toggleView(true)
+                        Log.e("ERROR", error.message)
+                    }
+                )
         } else {
-            listProgress!!.setVisibility(View.GONE)
-            showAlertDialog(
-                ApplicationConstants.WARNING,
-                ApplicationConstants.ERROR_MSG_CONNECTION_LOST
-            )
+            swipeRefreshLayout!!.isRefreshing = false
+            toggleView(true)
+            Common.hideLoading()
+            Common.showSnackBar(ApplicationConstants.NETWORK_ERROR, ContextCompat.getColor(this, R.color.red), this)
         }
     }
 
-    private fun performGetEmployeeList() {
-        val call = mApiService!!.fetchEmployeeData()
-        call.enqueue(object : Callback<Employee> {
-            override fun onResponse(call: Call<Employee>, response: Response<Employee>) {
-                listProgress!!.setVisibility(View.GONE)
-                val employee = response.body()
-                if (employee != null) {
-                    mEmployees.addAll(employee.data!!)
-                    mAdapter!!.notifyDataSetChanged()
-                }
-            }
-
-            override fun onFailure(call: Call<Employee>, t: Throwable) {
-                listProgress!!.setVisibility(View.GONE)
-                Log.e(TAG, "Got error : " + t.localizedMessage)
-            }
-        })
-    }
-
     override fun onItemClicked(employee: EmployeeData) {
-        val mDetails = EmployeeDetails(employee.employee_name.toString(), employee.employee_age.toString())
+        val mDetails = employee.id?.let { EmployeeDetails(it) }
         val intent = Intent(this, EmployeeDetailsActivity::class.java)
         intent.putExtra("employee_data", mDetails)
         startActivity(intent)
+    }
+
+    private fun toggleView(isFeedEmpty: Boolean) {
+        if (isFeedEmpty) {
+            emptyFeed!!.visibility = View.VISIBLE
+            employeeListRecyclerView!!.visibility = View.GONE
+        } else {
+            emptyFeed!!.visibility = View.GONE
+            employeeListRecyclerView!!.visibility = View.VISIBLE
+        }
     }
 
     companion object {

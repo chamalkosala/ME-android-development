@@ -9,4 +9,6 @@
     <color name="black">#000000</color>
     <color name="blue">#4169E1</color>
     <color name="green">#2c8e19</color>
+
+    <color name="red">#FF3B30</color>
 </resources>

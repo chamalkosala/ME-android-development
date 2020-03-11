@@ -9,4 +9,7 @@
     <string name="emp_name">Employee Name:</string>
     <string name="emp_age">Age:</string>
     <string name="profile_image">Profile Image</string>
+    <string name="empty_feed_image">Empty feed image</string>
+
+    <string name="loading">Loading…</string>
 </resources>
